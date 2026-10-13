@@ -46,7 +46,10 @@ p1
 ```{r, add-era}
 #| output: FALSE
 episode_data <- episode_data |>
-  mutate(era = ifelse(episode_number <= 136, "Seasons 1-7 (Michael)", "Seasons 8-9 (Post-Michael)"))
+  mutate(era = factor(
+    ifelse(episode_number <= 136, "Before Departure", "After Departure"),
+    levels = c("Before Departure", "After Departure")
+  ))
 ```
 
 ```{r, chart1b-build}
@@ -68,8 +71,9 @@ p1b <- ggplot(episode_data, aes(x = episode_number, y = imdb_rating, colour = er
     plot.subtitle = element_text(hjust = 0.5, margin = margin(b = 10))
   ) +
   scale_colour_manual(
-    values = c("Seasons 1-7 (Michael)" = "#67a9cf", "Seasons 8-9 (Post-Michael)" = "#fdae61"),
-    labels = c("Seasons 1-7 (Michael)" = "With Michael", "Seasons 8-9 (Post-Michael)" = "After Michael")
+    values = c("Before Departure" = "#67a9cf", "After Departure" = "#fdae61"),
+    labels = c("Before Departure" = "With Michael", "After Departure" = "After Michael"),
+    breaks = c("Before Departure", "After Departure")
   ) +
   scale_x_continuous(breaks = seq(0, 180, by = 25))
 p1b
@@ -89,7 +93,6 @@ p2 <- ggplot(episode_data, aes(x = era, y = imdb_rating)) +
   theme(
     plot.title = element_text(hjust = 0.5, margin = margin(b = 10))
   ) +
-  scale_x_discrete(labels = c("Seasons 1-7 (Michael)" = "Before Departure", "Seasons 8-9 (Post-Michael)" = "After Departure")) +
   coord_cartesian(xlim = c(0.5, 2.5), clip = "off")
 p2
 ```
@@ -112,12 +115,11 @@ p2b <- ggplot(episode_data, aes(x = era, y = imdb_rating, fill = era)) +
     plot.title = element_text(hjust = 0.5, margin = margin(b = 8)),
     plot.subtitle = element_text(hjust = 0.5, margin = margin(b = 10))
   ) +
-  scale_fill_manual(values = c("Seasons 1-7 (Michael)" = "#67a9cf", "Seasons 8-9 (Post-Michael)" = "#fdae61")) +
-  scale_x_discrete(labels = c("Seasons 1-7 (Michael)" = "With Michael", "Seasons 8-9 (Post-Michael)" = "After Michael")) +
+  scale_fill_manual(values = c("Before Departure" = "#67a9cf", "After Departure" = "#fdae61")) +
+  scale_x_discrete(labels = c("Before Departure" = "With Michael", "After Departure" = "After Michael")) +
   coord_cartesian(xlim = c(0.5, 2.5), clip = "off")
 p2b
 ```
-
 ```{r, season-avg}
 #| output: FALSE
 season_data <- office_data |>
@@ -243,7 +245,7 @@ p2b_season
 
 **Was the Show Really That Bad Without Michael?**
 
-The difference becomes clearer when we compare the earlier and later seasons. The thick line in the middle of each box marks the typical episode rating for that era, with half the episodes scoring above it and half below. Episodes from Seasons 8 and 9 generally received lower ratings than those from Seasons 1 to 7. But that doesn't mean every episode after Michael left was poorly received.
+The difference becomes clearer when we compare the earlier and later seasons. The thick line in the middle of each box marks the typical episode rating for that group, with half the episodes scoring above it and half below. The typical episode received a lower rating after Michael left compared with earlier episodes. But that doesn't mean every episode after Michael left was poorly received.
 
 ```{r, chart3b-display}
 p2b
@@ -259,4 +261,4 @@ Maybe the real story isn't that The Office suddenly became a bad show after the 
 
 ## 4. Data / Source Note
 
-The data were obtained from the `schrute` R package, available through CRAN. The package contains episode scripts and IMDb ratings for The Office (US) and was used in the TidyTuesday community data project on March 17, 2020. Episode-level ratings were extracted from the dialogue-level dataset using the `distinct()` function in R. This reduced the original 55,130 lines of dialogue to 186 unique episodes. The number of episodes reflects how they are recorded in the dataset and may differ from other published episode counts, such as 201, because some double-length episodes are counted differently. Mean ratings for each season were calculated by averaging the IMDb ratings of all episodes within that season. For the distribution comparison, episodes were grouped into Seasons 1-7 and Seasons 8-9. Since Michael Scott departed during Season 7, these groups represent a season-based comparison rather than an exact division of episodes before and after his departure.IMDb ratings represent evaluations submitted by users rather than television viewership figures. These ratings may also differ from current IMDb scores. As a result, the findings reflect patterns in the dataset's episode ratings and cannot establish whether Michael Scott's departure directly caused changes in how the show was perceived.
+The data were obtained from the `schrute` R package, available through CRAN. The package contains episode scripts and IMDb ratings for The Office (US) and was used in the TidyTuesday community data project on March 17, 2020. Episode-level ratings were extracted from the dialogue-level dataset using the `distinct()` function in R. This reduced the original 55,130 lines of dialogue to 186 unique episodes. The number of episodes reflects how they are recorded in the dataset and may differ from other published episode counts, such as 201, because some double-length episodes are counted differently. Mean ratings for each season were calculated by averaging the IMDb ratings of all episodes within that season. For the distribution comparison, episodes were divided based on Michael Scott's departure in Episode 136.Episodes 1-136 were included in the first group, while episodes 137-186 were classified as occurring after his departure. IMDb ratings represent evaluations submitted by users rather than television viewership figures. These ratings may also differ from current IMDb scores. As a result, the findings reflect patterns in the dataset's episode ratings and cannot establish whether Michael Scott's departure directly caused changes in how the show was perceived.
