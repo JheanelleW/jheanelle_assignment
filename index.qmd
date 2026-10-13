@@ -1,0 +1,262 @@
+---
+title: "The Office: Did Ratings Decline After Michael Scott Left?"
+author: Jheanelle Walters
+date: today
+format: html
+toc: true
+execute:
+  echo: false
+  warning: false
+---
+
+```{r, setup}
+#| output: FALSE
+library(schrute)
+library(tidyverse)
+```
+```{r, load-data}
+#| output: FALSE
+office_data <- schrute::theoffice
+```
+```{r, episode-data}
+#| output: FALSE
+episode_data <- office_data |>
+  distinct(season, episode, episode_name, air_date, imdb_rating, total_votes) |>
+  mutate(episode_number = row_number())
+```
+```{r, chart1-build}
+#| output: FALSE
+p1 <- ggplot(episode_data, aes(x = episode_number, y = imdb_rating)) +
+  geom_line() +
+  geom_vline(xintercept = 136, linetype = "dashed", colour = "red") +
+  labs(
+    title = "The Office: IMDb Rating by Episode",
+    subtitle = "Dashed line marks Michael Scott's final episode",
+    x = "Episode Number",
+    y = "IMDb Rating"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(hjust = 0.5, margin = margin(b = 8)),
+    plot.subtitle = element_text(hjust = 0.5, margin = margin(b = 10))
+  ) +
+  scale_x_continuous(breaks = seq(0, 180, by = 25))
+p1
+```
+```{r, add-era}
+#| output: FALSE
+episode_data <- episode_data |>
+  mutate(era = ifelse(episode_number <= 136, "Seasons 1-7 (Michael)", "Seasons 8-9 (Post-Michael)"))
+```
+
+```{r, chart1b-build}
+#| output: FALSE
+p1b <- ggplot(episode_data, aes(x = episode_number, y = imdb_rating, colour = era)) +
+  geom_line(linewidth = 0.8) +
+  geom_vline(xintercept = 136, linetype = "dashed", colour = "black", linewidth = 0.7) +
+  labs(
+    title = "How Episode Ratings Changed Around Michael Scott's Departure",
+    subtitle = "Each episode's IMDb rating, colored by era",
+    x = "Episode Number",
+    y = "IMDb Rating",
+    colour = "Era"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(hjust = 0.5, margin = margin(b = 8)),
+    plot.subtitle = element_text(hjust = 0.5, margin = margin(b = 10))
+  ) +
+  scale_colour_manual(
+    values = c("Seasons 1-7 (Michael)" = "#67a9cf", "Seasons 8-9 (Post-Michael)" = "#fdae61"),
+    labels = c("Seasons 1-7 (Michael)" = "With Michael", "Seasons 8-9 (Post-Michael)" = "After Michael")
+  ) +
+  scale_x_continuous(breaks = seq(0, 180, by = 25))
+p1b
+```
+```{r, chart2-build}
+#| output: FALSE
+p2 <- ggplot(episode_data, aes(x = era, y = imdb_rating)) +
+  geom_boxplot() +
+  annotate("text", x = 2, y = 9.75, label = "Series finale", size = 3.5, hjust = -0.1) +
+  annotate("text", x = 2, y = 9.3, label = "A.A.R.M.", size = 3.5, hjust = -0.1) +
+  labs(
+    title = "IMDb Ratings: Before vs. After Michael Scott's Departure",
+    x = NULL,
+    y = "IMDb Rating"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(hjust = 0.5, margin = margin(b = 10))
+  ) +
+  scale_x_discrete(labels = c("Seasons 1-7 (Michael)" = "Before Departure", "Seasons 8-9 (Post-Michael)" = "After Departure")) +
+  coord_cartesian(xlim = c(0.5, 2.5), clip = "off")
+p2
+```
+```{r, chart2b-build}
+#| output: FALSE
+p2b <- ggplot(episode_data, aes(x = era, y = imdb_rating, fill = era)) +
+  geom_boxplot(alpha = 0.8) +
+  annotate("text", x = 2, y = 9.75, label = "The finale: 9.7/10", size = 3.5, fontface = "bold", hjust = -0.05) +
+  annotate("text", x = 2, y = 9.3, label = "A.A.R.M.: 9.3/10", size = 3.5, fontface = "bold", hjust = -0.05) +
+  labs(
+    title = "Ratings Took a Real Hit After Michael Scott Left",
+    subtitle = "But the show could still hit high notes when it mattered",
+    x = NULL,
+    y = "IMDb Rating",
+    fill = "Era"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5, margin = margin(b = 8)),
+    plot.subtitle = element_text(hjust = 0.5, margin = margin(b = 10))
+  ) +
+  scale_fill_manual(values = c("Seasons 1-7 (Michael)" = "#67a9cf", "Seasons 8-9 (Post-Michael)" = "#fdae61")) +
+  scale_x_discrete(labels = c("Seasons 1-7 (Michael)" = "With Michael", "Seasons 8-9 (Post-Michael)" = "After Michael")) +
+  coord_cartesian(xlim = c(0.5, 2.5), clip = "off")
+p2b
+```
+
+```{r, season-avg}
+#| output: FALSE
+season_data <- office_data |>
+  distinct(season, episode, imdb_rating) |>
+  group_by(season) |>
+  summarise(avg_rating = mean(imdb_rating))
+```
+```{r, chart2-season}
+#| output: FALSE
+p2_season <- ggplot(season_data, aes(x = season, y = avg_rating)) +
+  geom_col(fill = "grey30") +
+  geom_hline(yintercept = mean(season_data$avg_rating[1:7]), linetype = "dotted", colour = "black") +
+  annotate("segment", x = 6, xend = 6, y = 9.2, yend = season_data$avg_rating[6] + 0.1,
+           arrow = arrow(length = unit(0.2, "cm")), colour = "black") +
+  annotate("text", x = 6, y = 9.6, label = "Earlier dip — before Michael left", size = 4, fontface = "italic") +
+  labs(
+    title = "Average IMDb Rating by Season",
+    subtitle = "Season 6 shows an earlier dip while Michael Scott was still present",
+    x = "Season",
+    y = "Average IMDb Rating"
+  ) +
+  theme_minimal(base_size = 13) + theme(
+  plot.title = element_text(hjust = 0.5, margin = margin(b = 8)),
+  plot.subtitle = element_text(hjust = 0.5, margin = margin(b = 10))
+) +
+  scale_x_continuous(breaks = 1:9) +
+  coord_cartesian(ylim = c(0, 10))
+p2_season
+```
+```{r, chart2b-season}
+#| output: FALSE
+p2b_season <- ggplot(season_data, aes(x = season, y = avg_rating, fill = season %in% c(8, 9))) +
+  geom_col() +
+annotate("segment", x = 6, xend = 6, y = 8.9, yend = season_data$avg_rating[6] + 0.2,
+         arrow = arrow(length = unit(0.2, "cm")), colour = "black") +
+annotate("text", x = 6, y = 10, label = "Wait, Season 6 was\nalready shaky!", size = 4, fontface = "bold") +
+  labs(
+    title = "Turns Out Season 6 Was Already a Little Rocky",
+    subtitle = "Even with Michael still around, ratings dipped once before",
+    x = "Season",
+    y = "Average IMDb Rating"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5, margin = margin(b = 8)),
+    plot.subtitle = element_text(hjust = 0.5, margin = margin(b = 10))
+  ) +
+  scale_fill_manual(values = c("TRUE" = "#fdae61", "FALSE" = "#67a9cf")) +
+  scale_x_continuous(breaks = 1:9) +
+  coord_cartesian(ylim = c(0, 11))
+p2b_season
+```
+## 1. Story Summary
+
+Fans often argue that The Office was never the same after Michael Scott left. But do the episode ratings actually support that claim?
+
+This analysis examines how IMDb episode ratings changed across the series, particularly in the seasons following Michael's departure. It explores whether the later seasons generally received lower ratings and whether the idea that The Office was consistently better with Michael Scott is supported by the data.
+
+The results suggest that the story is not so straightforward. Although ratings generally declined in seasons 8 and 9, the show had experienced a dip before Michael's departure, particularly in Season 6. This suggests that lower ratings were not unique to the later seasons. However, the decline following Season 7 was more pronounced, with the typical episode receiving a lower rating than in earlier seasons. Despite this, the show continued to produce highly rated episodes.
+
+Overall, these findings challenge the idea that The Office was consistently well received before Michael left and universally disliked after his departure. While his departure coincided with a decline in episode ratings, the data cannot establish whether it was responsible for that change. Instead, the findings suggest that the show's reception was more complicated than a simple divide between the seasons with and without Michael Scott.
+
+## 2. Version A: Scientific Article
+
+### Introduction
+
+Michael Scott's departure in Season 7 marked a major transition in The Office. Although the later seasons are often considered less well received, it remains unclear whether this perception is reflected in episode ratings. This analysis examines IMDb ratings across all nine seasons to identify trends before and after his departure. By comparing episode ratings, seasonal averages, and rating distributions, the analysis explores whether the later seasons were generally rated less favourably and whether similar patterns were present earlier in the series.
+
+### Episode Rating Trends Across the Series
+
+Figure 1 shows the IMDb ratings of all 186 episodes included in the dataset, arranged in the order they originally aired. The dashed vertical line marks Michael Scott's departure in Season 7, during Episode 136, "Goodbye, Michael." Ratings fluctuate throughout the series, but a noticeable decline appears in the later seasons, with many episodes receiving lower ratings than those in earlier seasons.
+
+```{r, chart1-display}
+p1
+```
+
+### Differences in Episode Ratings Across the Seasons
+
+Although the overall trend suggests that ratings declined following Michael's departure, it is important to consider whether similar changes occurred earlier in the series. Figure 2 presents the mean IMDb rating for each season. Season 6 had a mean rating of 8.16, representing a decline compared with the surrounding seasons, despite Michael Scott being a central character. This suggests that fluctuations in episode ratings were already present before his departure and that declining ratings were not exclusive to the later seasons.
+
+```{r, chart2season-display}
+p2_season
+```
+
+### Comparison of Episode Rating Distributions
+
+Figure 3 compares the distribution of episode ratings between Seasons 1-7 (N = 136) and Seasons 8-9 (N = 50). The median episode rating was lower in Seasons 8-9 (Mdn = 7.8) compared with Seasons 1-7 (Mdn = 8.4). However, the later seasons still included several highly rated episodes, including the series finale, which received a rating of 9.7 and featured a brief cameo by Michael Scott. These findings suggest that although typical episode ratings declined in the later seasons, this pattern was not consistent across all episodes.
+
+```{r, chart3-display}
+p2
+```
+
+### Discussion and Conclusion
+
+Taken together, these findings suggest that The Office generally received lower IMDb ratings in Seasons 8 and 9 compared with earlier seasons. However, this does not mean that every episode following Michael Scott's departure was consistently poorly rated, or that episodes consistently received high ratings before he left. Although his departure coincided with a decline in typical episode ratings, the results do not establish that it was the cause. Instead, the findings suggest that the show's ratings followed a more nuanced pattern than the commonly held belief that The Office was simply better with Michael Scott.
+
+## 3. Version B: Accessible / Dynamic Outlet
+
+### Did the Office Really Go Downhill After Michael Scott Left?
+
+Ask fans of The Office when the show started going downhill, and there's a good chance someone will mention Michael Scott leaving. After seven seasons of questionable management decisions, awkward meetings, and unforgettable one-liners, the world's best boss finally said goodbye to Dunder Mifflin.
+
+For many fans, the show was just never quite the same. But do the episode ratings actually tell that story?
+
+**Did the Ratings Really Drop After Michael Left?**
+
+Let's start with the big picture. Looking at ratings across all nine seasons, it's hard not to notice that the later episodes generally received lower scores. At first glance, this seems to support what many fans have been saying all along. Michael left, and the ratings went down.
+
+```{r, chart1b-display}
+p1b
+```
+
+But was the show really doing that much better before he left?
+
+**Wait, Hadn't The Office Struggled Before?**
+
+Here's where things get interesting. Season 6 had already experienced a dip in average ratings, and Michael was still part of the show. So, perhaps Michael's departure was not the first sign of trouble. The show had experienced lower ratings before, which raises another question: was the decline after Michael left really that different?
+
+```{r, chart2bseason-display}
+p2b_season
+```
+
+**Was the Show Really That Bad Without Michael?**
+
+The difference becomes clearer when we compare the earlier and later seasons. The thick line in the middle of each box marks the typical episode rating for that era, with half the episodes scoring above it and half below. Episodes from Seasons 8 and 9 generally received lower ratings than those from Seasons 1 to 7. But that doesn't mean every episode after Michael left was poorly received.
+
+```{r, chart3b-display}
+p2b
+```
+
+Despite the lower typical ratings, the final two seasons still had some standout episodes. For example, the penultimate episode, "A.A.R.M.," received a rating of 9.3 on IMDb, even without Michael Scott making an appearance. The series finale received an even higher rating of 9.7, but there's an interesting detail: Michael actually returned for that episode.
+
+Was the finale so highly rated because fans got to see Michael again, or because it brought the series to a satisfying conclusion? The ratings alone can't tell us. However, the high rating of "A.A.R.M." suggests that the show was still capable of producing well-received episodes without him.
+
+So, did The Office get worse after Michael Scott left? According to the episode ratings, the later seasons were generally less well received. However, that doesn't mean every episode without Michael was disappointing, or that the show was consistently better when he was present.
+
+Maybe the real story isn't that The Office suddenly became a bad show after the world's best boss left. It's that the typical episode wasn't rated as highly anymore, even though the series still had its memorable moments.
+
+## 4. Data / Source Note
+
+The data were obtained from the `schrute` R package, available through CRAN. The package contains episode scripts and IMDb ratings for The Office (US) and was used in the TidyTuesday community data project on March 17, 2020. Episode-level ratings were extracted from the dialogue-level dataset using the `distinct()` function in R. This reduced the original 55,130 lines of dialogue to 186 unique episodes. The number of episodes reflects how they are recorded in the dataset and may differ from other published episode counts, such as 201, because some double-length episodes are counted differently. Mean ratings for each season were calculated by averaging the IMDb ratings of all episodes within that season. For the distribution comparison, episodes were grouped into Seasons 1-7 and Seasons 8-9. Since Michael Scott departed during Season 7, these groups represent a season-based comparison rather than an exact division of episodes before and after his departure.IMDb ratings represent evaluations submitted by users rather than television viewership figures. These ratings may also differ from current IMDb scores. As a result, the findings reflect patterns in the dataset's episode ratings and cannot establish whether Michael Scott's departure directly caused changes in how the show was perceived.
